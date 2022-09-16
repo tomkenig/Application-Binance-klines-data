@@ -29,11 +29,11 @@ SELECT * FROM m1174_stock_dwh.binance_download_settings
 ;
 
 
-
+/*
 update m1174_stock_dwh.binance_download_settings
 set download_setting_status_id = 0
 ;
-
+*/
 
 
 SELECT 

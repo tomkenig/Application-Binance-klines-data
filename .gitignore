@@ -3,3 +3,6 @@ db_credentials.json
 global_config.json
 current_data_OLD.py
 stock_dwh_functions_OLD.py
+tmp_current_sql_works.sql
+tmp_current_sql_works.sql
+historical_data_OLD.py

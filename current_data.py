@@ -7,16 +7,19 @@
 # libs
 import requests
 import datetime
+import json
 from db_works import db_connect
 
 
-# data_granulation = 'klines'
-# market = 'BTCUSDT'
-# tick_interval = '1h'
-# range_to_download = 500
-db_schema_name = 'm1174_stock_dwh'
-db_settings_table_name = 'binance_download_settings'
-db_table_name = 'binance_klines_data'
+# get settings from config json
+def get_settings_json():
+    with open("global_config.json") as json_conf:
+        app_conf = (json.load(json_conf))
+    print("conf file opened")
+    db_binance_schema_name = app_conf["db_binance_schema_name"]
+    db_binance_klines_table_name = app_conf["db_binance_klines_table_name"]
+    db_binance_settings_table_name = app_conf["db_binance_settings_table_name"]
+    return db_binance_schema_name, db_binance_klines_table_name, db_binance_settings_table_name
 
 
 # get settings
@@ -28,7 +31,7 @@ def get_settings(interval_param_):
         cursor.execute(
             "SELECT download_settings_id, market, tick_interval, data_granulation, stock_type, stock_exchange, "
             "current_range_to_overwrite, download_api_interval_sec, daily_update_from_files, monthly_update_from_files, start_hist_download_ux_timestamp "
-            "FROM " + db_schema_name + "." + db_settings_table_name + " WHERE current_update_from_api = 1 and "
+            "FROM " + db_binance_schema_name + "." + db_binance_settings_table_name + " WHERE current_update_from_api = 1 and "
                                                                      # "download_setting_status_id = 0 and "
                                                                      # "daily_hist_complete = 1 AND "
                                                                      # "monthly_hist_complete = 1 AND "
@@ -56,7 +59,7 @@ def get_settings(interval_param_):
          exit()
 
     # block current setting changing its status
-    cursor.execute("UPDATE " + db_schema_name + "." + db_settings_table_name + " SET download_setting_status_id = %s where download_settings_id = %s", (1, download_settings_id))
+    cursor.execute("UPDATE " + db_binance_schema_name + "." + db_binance_settings_table_name + " SET download_setting_status_id = %s where download_settings_id = %s", (1, download_settings_id))
     cnxn.commit()
     print("settings blocked")
     print(download_settings_id, market, tick_interval, data_granulation, stock_type, stock_exchange, range_to_download, download_api_interval_sec, daily_update_from_files, monthly_update_from_files, start_hist_download_ux_timestamp)
@@ -75,10 +78,10 @@ def get_binance_data_current():
 def insert_overwrite_data_current():
     short_data = get_binance_data_current()
     try:
-        cursor.execute("DELETE FROM " + db_schema_name+"."+db_table_name +" where open_time >= %s and download_settings_id = %s", (short_data[0][0], download_settings_id))
+        cursor.execute("DELETE FROM " + db_binance_schema_name+"."+db_binance_klines_table_name +" where open_time >= %s and download_settings_id = %s", (short_data[0][0], download_settings_id))
         print("delete done")
         for i in short_data:
-            cursor.execute("INSERT INTO " + db_schema_name+"."+db_table_name +"(open_time, open, high, low, close, volume, close_time,"
+            cursor.execute("INSERT INTO " + db_binance_schema_name+"."+db_binance_klines_table_name +"(open_time, open, high, low, close, volume, close_time,"
                                                                               " quote_asset_volume, number_of_trades, taker_buy_base_asset_volume, "
                                                                               "taker_buy_quote_asset_volume, `ignore`,"
                                                                               "download_settings_id, insert_ux_timestamp) "
@@ -94,7 +97,7 @@ def insert_overwrite_data_current():
 
 def update_settings_queue_current():
     try:
-        cursor.execute("UPDATE " + db_schema_name + "." + db_settings_table_name + " SET last_download_ux_timestamp = %s, next_download_ux_timestamp = %s,"
+        cursor.execute("UPDATE " + db_binance_schema_name + "." + db_binance_settings_table_name + " SET last_download_ux_timestamp = %s, next_download_ux_timestamp = %s,"
                                                                                    " download_setting_status_id = %s where download_settings_id = %s",
                        (str(int(datetime.datetime.utcnow().timestamp())),
                         str(int(str(int(datetime.datetime.utcnow().timestamp()))) + download_api_interval_sec),
@@ -107,6 +110,7 @@ def update_settings_queue_current():
 
 
 if __name__ == "__main__":
+    db_binance_schema_name, db_binance_klines_table_name, db_binance_settings_table_name = get_settings_json()
     cursor, cnxn = db_connect()
     download_settings_id, market, tick_interval, data_granulation, stock_type, stock_exchange, range_to_download, download_api_interval_sec, daily_update_from_files, monthly_update_from_files, start_hist_download_ux_timestamp = get_settings("current")
 
