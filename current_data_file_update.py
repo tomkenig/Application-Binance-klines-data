@@ -124,7 +124,7 @@ def get_files_monthly():
 
 def update_settings_queue_current():
     try:
-        cursor.execute("UPDATE " + db_binance_schema_name + "." + db_binance_settings_table_name + " SET last_download_ux_timestamp = %s, next_download_ux_timestamp = %s,"
+        cursor.execute("UPDATE " + db_binance_schema_name + "." + db_binance_settings_table_name + " SET last_daily_update_files_ux_timestamp = %s, next_download_ux_timestamp = %s,"
                                                                                    " download_setting_status_id = %s where download_settings_id = %s",
                        (str(int(datetime.datetime.utcnow().timestamp())),
                         str(int(str(int(datetime.datetime.utcnow().timestamp()))) + download_api_interval_sec),

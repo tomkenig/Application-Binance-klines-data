@@ -61,7 +61,7 @@ def get_queue_settings(interval_param_):
                                                                                       "monthly_hist_complete = 1 AND "
                                                                                       "coalesce(start_hist_download_ux_timestamp, 0) <= "
             + str(
-                int(datetime.datetime.utcnow().timestamp())) + " order by last_download_ux_timestamp asc limit 1")
+                int(datetime.datetime.utcnow().timestamp())) + " order by last_daily_update_files_ux_timestamp asc limit 1")
 
     else:
          exit()
