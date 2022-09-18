@@ -12,21 +12,47 @@ CREATE TABLE `binance_klines_data` (
   `taker_buy_quote_asset_volume` double DEFAULT NULL,
   `ignore` int DEFAULT NULL,
   `download_settings_id` int NOT NULL,
-  `insert_ux_timestamp` int DEFAULT NULL
-) ;
+  `insert_ux_timestamp` int DEFAULT NULL,
+  KEY `idx_binance_klines_data_download_settings_id` (`download_settings_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
 
 
 
 
 SELECT * FROM m1174_stock_dwh.binance_klines_data dat
 join m1174_stock_dwh.binance_download_settings st on dat.download_settings_id = st.download_settings_id
--- where st.tick_interval = '4h'
+where st.tick_interval = '1h'
 ;
 
 
 
 SELECT * FROM m1174_stock_dwh.binance_download_settings
 ;
+
+
+
+
+update m1174_stock_dwh.binance_download_settings
+set start_hist_download_ux_timestamp = 1483225200
+;
+
+
+update m1174_stock_dwh.binance_download_settings
+set daily_update_from_files = 0, monthly_update_from_files = 0
+where tick_interval = '1m'
+;
+
+
+
+truncate table m1174_stock_dwh.binance_klines_data;
+
+
+select * from
+ m1174_stock_dwh.binance_klines_data
+
+;
+
 
 
 /*
@@ -37,11 +63,13 @@ set download_setting_status_id = 0
 
 
 SELECT 
-    tick_interval,
-    download_settings_id,
-    MAX(FROM_UNIXTIME(insert_ux_timestamp)) AS last_insert_dtime
+    st.tick_interval,
+    f.download_settings_id,
+    MAX(FROM_UNIXTIME(f.insert_ux_timestamp)) AS last_insert_dtime,
+    count(0) as rec_cnt
 FROM
-    m1174_stock_dwh.binance_klines_data
-GROUP BY tick_interval , download_settings_id
+	m1174_stock_dwh.binance_download_settings st 
+    left join m1174_stock_dwh.binance_klines_data f on f.download_settings_id = st.download_settings_id
+GROUP BY st.tick_interval , f.download_settings_id
 ORDER BY 3 DESC
 ;

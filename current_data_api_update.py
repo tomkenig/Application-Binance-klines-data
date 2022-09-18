@@ -3,7 +3,10 @@
 # todo: montly 1m and 1w intervals doesn't insert last and next timestamps
 # todo: change columns names: daily(monthly)_update_from_files > update_from_daily(monthly)_files
 # todo: review tables names
-# todo: pobieraby ma byc w pierwszej kolejnosci ten, który już wg. czasow powinien byc pobierany i jednoczesnie jego dane były pobierane najdawniej
+# todo: pobieraby ma byc w pierwszej kolejnosci ten, który już wg. czasow powinien byc pobierany i jednoczesnie jego
+#  dane były pobierane najdawniej
+# todo: user column download priority
+
 # libs
 import requests
 import datetime
