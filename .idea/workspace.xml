@@ -28,7 +28,7 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
-  <component name="RunManager" selected="Python.current_data_file_update">
+  <component name="RunManager" selected="Python.binance_download_queue_repair">
     <configuration name="binance_download_queue_repair" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Application-Binance-klines-data" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -136,10 +136,10 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.binance_download_queue_repair" />
         <item itemvalue="Python.current_data_file_update" />
         <item itemvalue="Python.hist_data" />
         <item itemvalue="Python.current_data_api_update" />
-        <item itemvalue="Python.binance_download_queue_repair" />
         <item itemvalue="Python.curent_data_file_update" />
       </list>
     </recent_temporary>

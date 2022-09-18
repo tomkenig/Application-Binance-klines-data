@@ -15,7 +15,7 @@ def get_settings_json():
 def repair_queue_status():
     print("queue repair process start")
     cursor, cnxn = db_connect()
-    cursor.execute("UPDATE " + db_binance_schema_name + "." + db_binance_settings_table_name + " SET download_setting_status_id = %s where download_setting_status_id = %s", (0, 1))
+    cursor.execute("UPDATE " + db_binance_schema_name + "." + db_binance_settings_table_name + " SET download_setting_status_id = 0")
     cnxn.commit()
     return print("queue repair process done")
 
