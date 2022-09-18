@@ -12,7 +12,7 @@ Application overwrites data if same data exist. There won’t be any duplicates 
 
 0.01 current
 
-#Files
+# Files
 
 global_config.json – general configuration
 
