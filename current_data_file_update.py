@@ -2,15 +2,11 @@
 # todo: DONE daily can start only when monthly is completed
 # todo: fix setting status id problem < need set to default on error
 # todo: check commits and rollbacks
-# todo: parallel start historical_data can have a problem - files deletion in one instance, when other instace works with files. Crash
+# todo: parallel start historical_data can have a problem - files deletion in one instance, when other instace works
+#  with files. Crash
 
 # libs
 import requests
-from datetime import datetime, timedelta
-import datetime
-import zipfile
-import csv
-# from db_works import db_connect, db_tables
 # import stock_dwh_functions
 import os
 import json
@@ -19,8 +15,7 @@ import datetime
 import zipfile
 import csv
 from db_works import db_connect
-
-# import stock_dwh_functions
+import binance_download_queue as q
 
 # todo: move it to config file
 # path to downloaded files
@@ -53,71 +48,19 @@ def get_settings_json():
     return db_binance_schema_name, db_binance_klines_table_name, db_binance_settings_table_name
 
 
-# get settings
-def get_settings(interval_param_):
-    cursor, cnxn = db_connect()
-
-    # interval parameter: current - API data; daily_hist - data from daily files; monthly_hist - data from monthly files
-    if interval_param_ == "daily_update":
-        cursor.execute(
-            "SELECT download_settings_id, market, tick_interval, data_granulation, stock_type, stock_exchange, "
-            "current_range_to_overwrite, download_api_interval_sec, daily_update_from_files, monthly_update_from_files, start_hist_download_ux_timestamp "
-            "FROM " + db_binance_schema_name + "." + db_binance_settings_table_name + " WHERE daily_update_from_files = 1 and "
-            # "download_setting_status_id = 0 and "
-                                                                                      "daily_hist_complete = 1 AND "
-                                                                                      "monthly_hist_complete = 1 AND "
-                                                                                      "coalesce(start_hist_download_ux_timestamp, 0) <= "
-            + str(
-                int(datetime.datetime.utcnow().timestamp())) + " order by start_hist_download_ux_timestamp asc, download_settings_id desc limit 1")
-
-
-
-    else:
-        exit()
-
-    download_setting = cursor.fetchall()
-    if len(download_setting) > 0:
-        download_settings_id = download_setting[0][0]
-        market = download_setting[0][1]
-        tick_interval = download_setting[0][2]
-        data_granulation = download_setting[0][3]
-        stock_type = download_setting[0][4]
-        stock_exchange = download_setting[0][5]
-        range_to_download = download_setting[0][6]
-        download_api_interval_sec = download_setting[0][7]
-        daily_update_from_files = download_setting[0][8]
-        monthly_update_from_files = download_setting[0][9]
-        start_hist_download_ux_timestamp = download_setting[0][10]
-
-    else:
-        print("no data to download")
-        exit()
-
-    # block current setting changing its status
-    cursor.execute(
-        "UPDATE " + db_binance_schema_name + "." + db_binance_settings_table_name + " SET download_setting_status_id = %s where download_settings_id = %s",
-        (1, download_settings_id))
-    cnxn.commit()
-    print("settings blocked")
-    print(download_settings_id, market, tick_interval, data_granulation, stock_type, stock_exchange, range_to_download,
-          download_api_interval_sec, daily_update_from_files, monthly_update_from_files,
-          start_hist_download_ux_timestamp)
-    return download_settings_id, market, tick_interval, data_granulation, stock_type, stock_exchange, range_to_download, download_api_interval_sec, daily_update_from_files, monthly_update_from_files, start_hist_download_ux_timestamp
-
-
 # todo: it can be move to global_config_json
 def get_filenames_to_download(interval_param_):
     if interval_param_ == "monthly_hist":
         date_length = 7
         hist_days = int(
-            datetime.datetime.utcnow().timestamp()) / 86400 - start_hist_download_ux_timestamp / 86400  # for monthly_files
+            datetime.datetime.utcnow().timestamp()) / 86400 - start_hist_download_ux_timestamp / 86400  # for mnt files
     elif interval_param_ == "daily_hist":
         date_length = 10
         hist_days = 35  # for all daily files
     elif interval_param_ == "monthly_update":
         date_length = 7
         hist_days = 1
-    elif interval_param_ == "daily_update":
+    elif interval_param_ == "daily_file_update":
         date_length = 10
         hist_days = 3
     else:
@@ -179,6 +122,19 @@ def get_files_monthly():
         cnxn.rollback()
         exit()
 
+def update_settings_queue_current():
+    try:
+        cursor.execute("UPDATE " + db_binance_schema_name + "." + db_binance_settings_table_name + " SET last_download_ux_timestamp = %s, next_download_ux_timestamp = %s,"
+                                                                                   " download_setting_status_id = %s where download_settings_id = %s",
+                       (str(int(datetime.datetime.utcnow().timestamp())),
+                        str(int(str(int(datetime.datetime.utcnow().timestamp()))) + download_api_interval_sec),
+                        0, download_settings_id))
+        print("update done")
+    except:
+        print("error_2")
+        cnxn.rollback()
+        exit()
+
 
 if __name__ == "__main__":
     create_temp_dir()
@@ -189,9 +145,9 @@ if __name__ == "__main__":
 
     # daily update from files
     delete_old_files()
-    download_settings_id, market, tick_interval, data_granulation, stock_type, stock_exchange, range_to_download, download_api_interval_sec, daily_update_from_files, monthly_update_from_files, start_hist_download_ux_timestamp = get_settings(
-        "daily_update")
-    for k in get_filenames_to_download("daily_update"):
+    download_settings_id, market, tick_interval, data_granulation, stock_type, stock_exchange, range_to_download, download_api_interval_sec, daily_update_from_files, monthly_update_from_files, start_hist_download_ux_timestamp = q.get_queue_settings(
+        "daily_file_update")
+    for k in get_filenames_to_download("daily_file_update"):
         try:
             file_path = TMP_PATH + k
             base_url = "https://data.binance.vision/data/" + stock_type + "/daily/" + data_granulation + "/" + market + "/" + tick_interval + "/" + k + ".zip"
@@ -207,6 +163,8 @@ if __name__ == "__main__":
         cnxn.commit()
     except Exception as e:
         print(e)
+
+    update_settings_queue_current()
 
     cnxn.commit()
     cursor.close()
