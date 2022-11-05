@@ -6,7 +6,7 @@
 # todo: pobieraby ma byc w pierwszej kolejnosci ten, który już wg. czasow powinien byc pobierany i jednoczesnie jego
 #  dane były pobierane najdawniej
 # todo: user column download priority
-
+# todo: fix inset setting (no timestamp - maybe current timestamp as int is a good idea
 # libs
 import requests
 import datetime
